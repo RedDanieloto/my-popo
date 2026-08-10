@@ -199,14 +199,28 @@
                 httpsWarning.classList.remove('hidden');
             }
 
+            // Safe CSRF token helper
+            function getCsrfToken() {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                return meta ? meta.getAttribute('content') : '';
+            }
+
+            // Safe Date parser for Safari iOS
+            function parseSafeDate(dateStr) {
+                if (!dateStr) return new Date();
+                const d = new Date(dateStr);
+                return isNaN(d.getTime()) ? new Date() : d;
+            }
+
             // Restore from localStorage if active trip exists
             const savedTrip = JSON.parse(localStorage.getItem('mypopo_active_trip') || 'null');
-            if (activeTripIdInput.value || savedTrip) {
-                if (savedTrip && savedTrip.tripId == activeTripIdInput.value) {
-                    totalDistanceKm = savedTrip.distance || 0;
-                    totalLitersConsumed = savedTrip.litersConsumed || 0;
-                    maxSpeedKmh = savedTrip.maxSpeed || 0;
-                    startTime = new Date(savedTrip.startTime);
+            if (activeTripIdInput.value || (savedTrip && savedTrip.tripId)) {
+                if (savedTrip && savedTrip.tripId && (savedTrip.tripId == activeTripIdInput.value || !activeTripIdInput.value)) {
+                    activeTripIdInput.value = savedTrip.tripId;
+                    totalDistanceKm = parseFloat(savedTrip.distance) || 0;
+                    totalLitersConsumed = parseFloat(savedTrip.litersConsumed) || 0;
+                    maxSpeedKmh = parseFloat(savedTrip.maxSpeed) || 0;
+                    startTime = parseSafeDate(savedTrip.startTime);
                     lastPosition = savedTrip.lastPosition || null;
                     lastTimestamp = savedTrip.lastTimestamp || Date.now();
                 } else if (activeTripIdInput.value) {
@@ -289,7 +303,7 @@
 
                 if (startTime) {
                     const now = new Date();
-                    const diffMs = now - startTime;
+                    const diffMs = Math.max(0, now - startTime);
                     const secs = Math.floor((diffMs / 1000) % 60).toString().padStart(2, '0');
                     const mins = Math.floor((diffMs / (1000 * 60)) % 60).toString().padStart(2, '0');
                     const hrs = Math.floor(diffMs / (1000 * 60 * 60)).toString().padStart(2, '0');
@@ -394,10 +408,9 @@
 
                         updateUI();
                     }, (err) => {
-                        console.warn('Geolocation error code:', err.code, err.message);
+                        console.warn('Geolocation error:', err);
                         if (err.code === 1) {
                             setGpsState(false, 'Permiso Denegado');
-                            alert('Permiso de GPS denegado. Permite la ubicación en los ajustes de tu navegador o prueba el botón de Simulación.');
                         } else {
                             setGpsState(false, 'Buscando GPS...');
                         }
@@ -421,24 +434,23 @@
                         startLat = pos.coords.latitude;
                         startLng = pos.coords.longitude;
                     } catch (e) {
-                        console.warn('Permiso o posición inicial no obtenida:', e);
+                        console.warn('Posición inicial no obtenida:', e);
                     }
-                } else {
-                    alert('Tu navegador no soporta la API de Geolocalización.');
                 }
 
                 try {
-                    const resp = await fetch("{{ route('trips.start') }}", {
+                    const startUrl = "{{ route('trips.start') }}";
+                    const resp = await fetch(startUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-CSRF-TOKEN': getCsrfToken(),
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({ lat: startLat, lng: startLng })
                     });
                     const data = await resp.json();
-                    if (data.success) {
+                    if (data.success && data.trip) {
                         activeTripIdInput.value = data.trip.id;
                         totalDistanceKm = 0;
                         totalLitersConsumed = 0;
@@ -450,7 +462,7 @@
                         resumeTracking();
                     }
                 } catch (err) {
-                    alert('Error al iniciar el recorrido. Intenta nuevamente.');
+                    alert('Error al iniciar el recorrido: ' + err.message);
                 }
             });
 
@@ -462,22 +474,24 @@
                 }
 
                 if (!activeTripIdInput.value) {
-                    // Iniciar viaje en backend si no hay uno activo
                     try {
-                        const resp = await fetch("{{ route('trips.start') }}", {
+                        const startUrl = "{{ route('trips.start') }}";
+                        const resp = await fetch(startUrl, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-CSRF-TOKEN': getCsrfToken(),
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({ lat: 19.4326, lng: -99.1332 })
                         });
                         const data = await resp.json();
-                        if (data.success) {
+                        if (data.success && data.trip) {
                             activeTripIdInput.value = data.trip.id;
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.warn('Error al iniciar simulación:', e);
+                    }
                 }
 
                 isSimulating = true;
@@ -493,7 +507,6 @@
 
                 let targetSpeed = 65;
                 simulationInterval = setInterval(() => {
-                    // Random speed fluctuations between 40 km/h and 90 km/h
                     currentSpeedKmh = Math.round(targetSpeed + (Math.random() * 12 - 6));
                     if (currentSpeedKmh > maxSpeedKmh) maxSpeedKmh = currentSpeedKmh;
 
@@ -513,6 +526,34 @@
 
             // Finalizar Recorrido
             btnFinish.addEventListener('click', async () => {
+                let tripId = activeTripIdInput.value;
+
+                // Ensure a valid trip ID exists
+                if (!tripId || tripId === '' || tripId === 'undefined') {
+                    try {
+                        const startUrl = "{{ route('trips.start') }}";
+                        const startResp = await fetch(startUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': getCsrfToken(),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({})
+                        });
+                        const startData = await startResp.json();
+                        if (startData.success && startData.trip) {
+                            tripId = startData.trip.id;
+                            activeTripIdInput.value = tripId;
+                        }
+                    } catch (e) {}
+                }
+
+                if (!tripId) {
+                    alert('No hay un recorrido activo para finalizar.');
+                    return;
+                }
+
                 if (!confirm(`¿Deseas finalizar el recorrido?\n• Distancia: ${totalDistanceKm.toFixed(2)} km\n• Litros consumidos: ${totalLitersConsumed.toFixed(3)} L`)) {
                     return;
                 }
@@ -526,15 +567,16 @@
                     endLng = lastPosition.longitude;
                 }
 
-                const tripId = activeTripIdInput.value;
-                const finishUrl = `/recorrido/finalizar/${tripId}`;
+                // Construct absolute URL safely using Laravel route helper
+                const finishRouteTemplate = "{{ route('trips.finish', ':id') }}";
+                const finishUrl = finishRouteTemplate.replace(':id', encodeURIComponent(tripId));
 
                 try {
                     const resp = await fetch(finishUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'X-CSRF-TOKEN': getCsrfToken(),
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
@@ -555,9 +597,13 @@
                         alert('Error: ' + errMsg);
                     }
                 } catch (err) {
-                    alert('Error al conectar con el servidor: ' + err.message);
+                    alert('Error al finalizar el recorrido: ' + err.message);
                 }
             });
+        });
+    </script>
+
+</x-layout>
         });
     </script>
 
