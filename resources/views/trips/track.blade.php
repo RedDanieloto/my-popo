@@ -604,7 +604,3 @@
     </script>
 
 </x-layout>
-        });
-    </script>
-
-</x-layout>
