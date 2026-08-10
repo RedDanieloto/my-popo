@@ -10,6 +10,15 @@ use Illuminate\View\View;
 
 class FuelLoadController extends Controller
 {
+    public function gasActual()
+    {
+        $vehicle = Vehicle::where('id', 1)->first();
+
+        return response()->json([
+            'gas_actual' => $vehicle->current_liters
+        ]);
+    }
+
     public function create(): View
     {
         $vehicle = Vehicle::firstOrCreate(
