@@ -26,7 +26,13 @@
         /* Custom scrollbar & iOS safe areas */
         body {
             font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-            padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+            padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+        }
+        header.app-header {
+            padding-top: max(1.25rem, calc(0.75rem + env(safe-area-inset-top, 0px)));
+        }
+        nav.app-nav {
+            padding-bottom: max(0.75rem, calc(0.5rem + env(safe-area-inset-bottom, 0px)));
         }
         .glass-card {
             background: rgba(24, 24, 27, 0.75);
@@ -50,7 +56,7 @@
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500/30">
 
     <!-- Top Header -->
-    <header class="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/60 pt-2 pb-3 px-4">
+    <header class="app-header sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/60 pb-3 px-4">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20">
@@ -123,7 +129,7 @@
     </main>
 
     <!-- Bottom Navigation Bar (Tesla / iOS Style) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800/80 px-4 py-2">
+    <nav class="app-nav fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800/80 px-4 py-2">
         <div class="max-w-md mx-auto flex items-center justify-around">
             
             <!-- Dashboard -->
