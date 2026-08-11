@@ -126,6 +126,39 @@ class MyPopoTest extends TestCase
         ]);
     }
 
+    public function test_delete_trip_refunds_fuel_to_tank(): void
+    {
+        $vehicle = Vehicle::create([
+            'name' => 'Mi Pointer 2005',
+            'brand' => 'Volkswagen',
+            'model' => 'Pointer',
+            'year' => 2005,
+            'tank_capacity' => 51.00,
+            'current_liters' => 30.00,
+            'avg_consumption' => 10.00,
+            'initial_avg_consumption' => 12.50,
+        ]);
+
+        // Iniciar y finalizar viaje de 50 km (consume 5 L, tanque pasa a 25 L)
+        $startResponse = $this->postJson('/recorrido/iniciar');
+        $tripId = $startResponse->json('trip.id');
+        $this->postJson("/recorrido/finalizar/{$tripId}", [
+            'distance_km' => 50.0,
+            'liters_consumed' => 5.0,
+        ]);
+
+        $vehicle->refresh();
+        $this->assertEquals(25.00, $vehicle->current_liters);
+
+        // Cancelar / eliminar el viaje
+        $deleteResponse = $this->delete("/recorrido/{$tripId}");
+        $deleteResponse->assertRedirect('/historial');
+
+        $vehicle->refresh();
+        $this->assertEquals(30.00, $vehicle->current_liters); // Gasolina devuelta al tanque
+        $this->assertDatabaseMissing('trips', ['id' => $tripId]);
+    }
+
     public function test_history_and_stats_views_render_successfully(): void
     {
         $this->get('/historial')->assertStatus(200);

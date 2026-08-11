@@ -144,4 +144,13 @@ class TripController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Recorrido manual registrado correctamente.');
     }
+
+    public function destroy(Trip $trip, TripService $tripService): RedirectResponse
+    {
+        $liters = $trip->liters_consumed;
+        $tripService->deleteTrip($trip);
+
+        return redirect()->route('history.index')
+            ->with('success', "Recorrido cancelado correctamente. Se han devuelto {$liters} L de gasolina al tanque.");
+    }
 }

@@ -217,6 +217,59 @@ class TripApiController extends Controller
     }
 
     /**
+     * Cancela y elimina un recorrido (activo o finalizado reciente) y devuelve la gasolina al tanque.
+     */
+    public function cancelar(Request $request, ?Trip $trip = null, TripService $tripService): JsonResponse
+    {
+        $vehicle = $this->getVehicle();
+
+        if (! $trip || ! $trip->exists) {
+            $tripId = $request->input('trip_id') ?? $request->input('id');
+            if ($tripId) {
+                $trip = Trip::where('vehicle_id', $vehicle->id)->where('id', $tripId)->first();
+            }
+        }
+
+        if (! $trip || ! $trip->exists) {
+            $trip = Trip::where('vehicle_id', $vehicle->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first();
+        }
+
+        if (! $trip || ! $trip->exists) {
+            $trip = Trip::where('vehicle_id', $vehicle->id)
+                ->where('status', 'completed')
+                ->latest()
+                ->first();
+        }
+
+        if (! $trip) {
+            return response()->json([
+                'success' => false,
+                'action' => 'none',
+                'message' => 'No hay ningún recorrido reciente para cancelar.',
+            ], 404);
+        }
+
+        $liters = $trip->liters_consumed;
+        $tripService->deleteTrip($trip);
+        $freshVehicle = $vehicle->fresh();
+
+        return response()->json([
+            'success' => true,
+            'action' => 'cancelled',
+            'message' => "Recorrido cancelado correctamente. Se han devuelto {$liters} L de gasolina al tanque.",
+            'vehicle' => [
+                'name' => $freshVehicle->name,
+                'current_liters' => $freshVehicle->current_liters,
+                'fuel_percentage' => $freshVehicle->fuel_percentage,
+                'autonomy_km' => $freshVehicle->autonomy_km,
+            ],
+        ]);
+    }
+
+    /**
      * Calcula la distancia entre dos coordenadas en kilómetros (Fórmula de Haversine).
      */
     private function calculateHaversineDistance(float $lat1, float $lon1, float $lat2, float $lon2): float

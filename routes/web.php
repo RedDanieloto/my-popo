@@ -23,6 +23,7 @@ Route::get('/recorrido', [TripController::class, 'track'])->name('trips.track');
 Route::post('/recorrido/iniciar', [TripController::class, 'start'])->name('trips.start');
 Route::post('/recorrido/finalizar/{trip?}', [TripController::class, 'finish'])->name('trips.finish');
 Route::post('/recorrido/manual', [TripController::class, 'storeManual'])->name('trips.manual');
+Route::delete('/recorrido/{trip}', [TripController::class, 'destroy'])->name('trips.destroy');
 
 // Historial y Estadísticas
 Route::get('/historial', [HistoryController::class, 'index'])->name('history.index');

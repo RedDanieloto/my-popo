@@ -58,6 +58,7 @@ class HistoryController extends Controller
                 'date' => $trip->start_time,
                 'title' => $trip->title ?: 'Recorrido en automóvil',
                 'details' => [
+                    'id' => $trip->id,
                     'distance_km' => $trip->distance_km,
                     'duration' => $trip->duration_formatted,
                     'liters_consumed' => $trip->liters_consumed,

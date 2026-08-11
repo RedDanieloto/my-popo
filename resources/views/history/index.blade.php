@@ -72,9 +72,20 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-sm md:text-base font-bold text-white">{{ number_format($item['details']['distance_km'], 2) }} km</div>
-                                <div class="text-[11px] md:text-xs text-rose-400 font-medium">-{{ number_format($item['details']['liters_consumed'], 2) }} L</div>
+                            <div class="flex items-center gap-3">
+                                <div class="text-right">
+                                    <div class="text-sm md:text-base font-bold text-white">{{ number_format($item['details']['distance_km'], 2) }} km</div>
+                                    <div class="text-[11px] md:text-xs text-rose-400 font-medium">-{{ number_format($item['details']['liters_consumed'], 2) }} L</div>
+                                </div>
+                                @if (isset($item['details']['id']))
+                                    <form action="{{ route('trips.destroy', $item['details']['id']) }}" method="POST" onsubmit="return confirm('¿Deseas cancelar este recorrido?\nSe devolverán {{ number_format($item['details']['liters_consumed'], 2) }} L de gasolina al tanque.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition flex items-center justify-center" title="Cancelar recorrido y devolver gasolina">
+                                            <i class="bi bi-trash3 text-base"></i>
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
                     @endif

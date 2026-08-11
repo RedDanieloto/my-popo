@@ -84,4 +84,22 @@ class TripService
 
         return $trip;
     }
+
+    /**
+     * Cancela/Elimina un recorrido y devuelve los litros consumidos al tanque del vehículo.
+     */
+    public function deleteTrip(Trip $trip): void
+    {
+        $vehicle = $trip->vehicle;
+
+        if ($trip->liters_consumed > 0) {
+            $vehicle->current_liters = min(
+                (float) $vehicle->tank_capacity,
+                round((float) $vehicle->current_liters + (float) $trip->liters_consumed, 2)
+            );
+            $vehicle->save();
+        }
+
+        $trip->delete();
+    }
 }
