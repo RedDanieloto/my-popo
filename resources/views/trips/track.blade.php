@@ -230,23 +230,65 @@
                 return isNaN(d.getTime()) ? new Date() : d;
             }
 
-            // Restore from localStorage if active trip exists
+            // Restore from localStorage if active trip exists in DB
             const savedTrip = JSON.parse(localStorage.getItem('mypopo_active_trip') || 'null');
-            if (activeTripIdInput.value || (savedTrip && savedTrip.tripId)) {
-                if (savedTrip && savedTrip.tripId && (savedTrip.tripId == activeTripIdInput.value || !activeTripIdInput.value)) {
-                    activeTripIdInput.value = savedTrip.tripId;
+            if (activeTripIdInput.value) {
+                if (savedTrip && savedTrip.tripId && savedTrip.tripId == activeTripIdInput.value) {
                     totalDistanceKm = parseFloat(savedTrip.distance) || 0;
                     totalLitersConsumed = parseFloat(savedTrip.litersConsumed) || 0;
                     maxSpeedKmh = parseFloat(savedTrip.maxSpeed) || 0;
                     startTime = parseSafeDate(savedTrip.startTime);
                     lastPosition = savedTrip.lastPosition || null;
                     lastTimestamp = savedTrip.lastTimestamp || Date.now();
-                } else if (activeTripIdInput.value) {
+                } else {
                     startTime = new Date();
                     lastTimestamp = Date.now();
                 }
                 resumeTracking();
+            } else {
+                // If DB says no active trip, clear local storage
+                localStorage.removeItem('mypopo_active_trip');
             }
+
+            // Poll API every 5s to sync remote start/finish from Siri/Shortcuts/n8n
+            async function syncTripStatusFromApi() {
+                try {
+                    const resp = await fetch('/api/recorrido/estado', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await resp.json();
+
+                    if (!data || !data.success) return;
+
+                    if (!data.is_active && activeTripIdInput.value) {
+                        // Remote trip was finished via API/Siri
+                        if (timerInterval) clearInterval(timerInterval);
+                        if (simulationInterval) clearInterval(simulationInterval);
+                        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                        
+                        localStorage.removeItem('mypopo_active_trip');
+                        activeTripIdInput.value = '';
+                        isSimulating = false;
+                        
+                        if (btnStart) btnStart.classList.remove('hidden');
+                        if (btnFinish) btnFinish.classList.add('hidden');
+                        
+                        setGpsState(false, 'Finalizado por API');
+                        displaySpeed.textContent = '0';
+                        displayTimer.textContent = '00:00:00';
+                        alert('El recorrido ha sido finalizado remotamente (vía API / Atajos).');
+                    } else if (data.is_active && !activeTripIdInput.value && data.trip) {
+                        // Remote trip was started via API/Siri
+                        activeTripIdInput.value = data.trip.id;
+                        startTime = parseSafeDate(data.trip.start_time);
+                        resumeTracking();
+                    }
+                } catch (e) {
+                    console.warn('Sync status check error:', e);
+                }
+            }
+
+            setInterval(syncTripStatusFromApi, 5000);
 
             function calculateDistance(lat1, lon1, lat2, lon2) {
                 const R = 6371;
