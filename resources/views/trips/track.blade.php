@@ -141,15 +141,24 @@
                     <input type="hidden" id="vehicle-avg-consumption" value="{{ $vehicle->avg_consumption }}">
 
                     <!-- Iniciar Recorrido Button -->
-                    <button id="btn-start-trip" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-zinc-950 font-black text-base rounded-2xl shadow-xl shadow-cyan-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? 'hidden' : '' }}">
+                    <button id="btn-start-trip" type="button" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-zinc-950 font-black text-base rounded-2xl shadow-xl shadow-cyan-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? 'hidden' : '' }}">
                         <i class="bi bi-play-circle-fill text-xl"></i>
                         <span>Iniciar Recorrido con GPS</span>
-                                        <!-- Finalizar Recorrido Button -->
+                    </button>
+
+                    <!-- Finalizar Recorrido Button -->
                     <button id="btn-finish-trip" type="button" class="w-full py-4 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-black text-base rounded-2xl shadow-xl shadow-rose-500/30 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? '' : 'hidden' }}">
                         <i class="bi bi-stop-circle-fill text-xl"></i>
                         <span>Finalizar Recorrido</span>
                     </button>
 
+                    <!-- Simulador de Manejo (Test Mode) -->
+                    <div>
+                        <button id="btn-simulate-trip" type="button" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 font-bold text-xs md:text-sm rounded-xl border border-cyan-500/30 transition flex items-center justify-center gap-2">
+                            <i class="bi bi-play-fill text-base"></i>
+                            <span>Simular Manejo de Prueba (Sin Mover Vehículo)</span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -432,68 +441,22 @@
             }
 
             // Iniciar Recorrido con GPS Real
-            btnStart.addEventListener('click', async () => {
-                let startLat = null, startLng = null;
+            if (btnStart) {
+                btnStart.addEventListener('click', async () => {
+                    let startLat = null, startLng = null;
 
-                if ('geolocation' in navigator) {
-                    try {
-                        const pos = await new Promise((resolve, reject) => {
-                            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 7000 });
-                        });
-                        startLat = pos.coords.latitude;
-                        startLng = pos.coords.longitude;
-                    } catch (e) {
-                        console.warn('Posición inicial no obtenida:', e);
+                    if ('geolocation' in navigator) {
+                        try {
+                            const pos = await new Promise((resolve, reject) => {
+                                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 7000 });
+                            });
+                            startLat = pos.coords.latitude;
+                            startLng = pos.coords.longitude;
+                        } catch (e) {
+                            console.warn('Posición inicial no obtenida:', e);
+                        }
                     }
-                }
 
-                try {
-                    const startUrl = "{{ route('trips.start') }}";
-                    const resp = await fetch(startUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': getCsrfToken(),
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ lat: startLat, lng: startLng })
-                    });
-                    const data = await resp.json();
-                    if (data.success && data.trip) {
-                        activeTripIdInput.value = data.trip.id;
-                        totalDistanceKm = 0;
-                        totalLitersConsumed = 0;
-                        currentSpeedKmh = 0;
-                        maxSpeedKmh = 0;
-                        startTime = new Date();
-                        lastTimestamp = Date.now();
-                        lastPosition = startLat && startLng ? { latitude: startLat, longitude: startLng } : null;
-
-                        localStorage.setItem('mypopo_active_trip', JSON.stringify({
-                            tripId: data.trip.id,
-                            distance: 0,
-                            litersConsumed: 0,
-                            maxSpeed: 0,
-                            startTime: startTime.toISOString(),
-                            lastPosition: lastPosition,
-                            lastTimestamp: lastTimestamp
-                        }));
-
-                        resumeTracking();
-                    }
-                } catch (err) {
-                    alert('Error al iniciar el recorrido: ' + err.message);
-                }
-            });
-
-            // Modo Simulador de Manejo (Test Drive Simulation)
-            btnSimulate.addEventListener('click', async () => {
-                if (isSimulating) {
-                    alert('La simulación ya está activa.');
-                    return;
-                }
-
-                if (!activeTripIdInput.value) {
                     try {
                         const startUrl = "{{ route('trips.start') }}";
                         const resp = await fetch(startUrl, {
@@ -503,113 +466,165 @@
                                 'X-CSRF-TOKEN': getCsrfToken(),
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ lat: 19.4326, lng: -99.1332 })
+                            body: JSON.stringify({ lat: startLat, lng: startLng })
                         });
                         const data = await resp.json();
                         if (data.success && data.trip) {
                             activeTripIdInput.value = data.trip.id;
+                            totalDistanceKm = 0;
+                            totalLitersConsumed = 0;
+                            currentSpeedKmh = 0;
+                            maxSpeedKmh = 0;
+                            startTime = new Date();
+                            lastTimestamp = Date.now();
+                            lastPosition = startLat && startLng ? { latitude: startLat, longitude: startLng } : null;
+
+                            localStorage.setItem('mypopo_active_trip', JSON.stringify({
+                                tripId: data.trip.id,
+                                distance: 0,
+                                litersConsumed: 0,
+                                maxSpeed: 0,
+                                startTime: startTime.toISOString(),
+                                lastPosition: lastPosition,
+                                lastTimestamp: lastTimestamp
+                            }));
+
+                            resumeTracking();
                         }
-                    } catch (e) {
-                        console.warn('Error al iniciar simulación:', e);
+                    } catch (err) {
+                        alert('Error al iniciar el recorrido: ' + err.message);
                     }
-                }
+                });
+            }
 
-                isSimulating = true;
-                btnStart.classList.add('hidden');
-                btnFinish.classList.remove('hidden');
-                btnSimulate.innerHTML = '<i class="bi bi-lightning-fill"></i> <span>Simulación Activa (Manejando a ~65 km/h)...</span>';
-                btnSimulate.className = 'w-full py-2.5 bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-bold text-xs rounded-xl animate-pulse flex items-center justify-center gap-2';
+            // Modo Simulador de Manejo (Test Drive Simulation)
+            if (btnSimulate) {
+                btnSimulate.addEventListener('click', async () => {
+                    if (isSimulating) {
+                        alert('La simulación ya está activa.');
+                        return;
+                    }
 
-                if (!startTime) startTime = new Date();
-                startTimer();
+                    if (!activeTripIdInput.value) {
+                        try {
+                            const startUrl = "{{ route('trips.start') }}";
+                            const resp = await fetch(startUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': getCsrfToken(),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ lat: 19.4326, lng: -99.1332 })
+                            });
+                            const data = await resp.json();
+                            if (data.success && data.trip) {
+                                activeTripIdInput.value = data.trip.id;
+                            }
+                        } catch (e) {
+                            console.warn('Error al iniciar simulación:', e);
+                        }
+                    }
 
-                setGpsState(true, 'Simulación Activa');
+                    isSimulating = true;
+                    if (btnStart) btnStart.classList.add('hidden');
+                    if (btnFinish) btnFinish.classList.remove('hidden');
+                    btnSimulate.innerHTML = '<i class="bi bi-lightning-fill"></i> <span>Simulación Activa (Manejando a ~65 km/h)...</span>';
+                    btnSimulate.className = 'w-full py-2.5 bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-bold text-xs rounded-xl animate-pulse flex items-center justify-center gap-2';
 
-                let targetSpeed = 65;
-                simulationInterval = setInterval(() => {
-                    currentSpeedKmh = Math.round(targetSpeed + (Math.random() * 12 - 6));
-                    if (currentSpeedKmh > maxSpeedKmh) maxSpeedKmh = currentSpeedKmh;
+                    if (!startTime) startTime = new Date();
+                    startTimer();
 
-                    const dtSeconds = 1;
-                    const dKm = (currentSpeedKmh / 3600) * dtSeconds;
-                    totalDistanceKm += dKm;
+                    setGpsState(true, 'Simulación Activa');
 
-                    const fuelEval = calculateInstantaneousFuelDelta(currentSpeedKmh, dKm, dtSeconds);
-                    totalLitersConsumed += fuelEval.litersDelta;
+                    let targetSpeed = 65;
+                    simulationInterval = setInterval(() => {
+                        currentSpeedKmh = Math.round(targetSpeed + (Math.random() * 12 - 6));
+                        if (currentSpeedKmh > maxSpeedKmh) maxSpeedKmh = currentSpeedKmh;
 
-                    efficiencyText.innerHTML = fuelEval.instantEfficiencyText;
-                    efficiencyDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+                        const dtSeconds = 1;
+                        const dKm = (currentSpeedKmh / 3600) * dtSeconds;
+                        totalDistanceKm += dKm;
 
-                    updateUI();
-                }, 1000);
-            });
+                        const fuelEval = calculateInstantaneousFuelDelta(currentSpeedKmh, dKm, dtSeconds);
+                        totalLitersConsumed += fuelEval.litersDelta;
+
+                        efficiencyText.innerHTML = fuelEval.instantEfficiencyText;
+                        efficiencyDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+
+                        updateUI();
+                    }, 1000);
+                });
+            }
 
             // Finalizar Recorrido
-            btnFinish.addEventListener('click', async () => {
-                let tripId = activeTripIdInput.value;
+            if (btnFinish) {
+                btnFinish.addEventListener('click', async () => {
+                    let tripId = activeTripIdInput.value;
 
-                if (!confirm(`¿Deseas finalizar el recorrido?\n• Distancia: ${totalDistanceKm.toFixed(2)} km\n• Litros consumidos: ${totalLitersConsumed.toFixed(3)} L`)) {
-                    return;
-                }
-
-                btnFinish.disabled = true;
-                btnFinish.innerHTML = '<i class="bi bi-arrow-repeat animate-spin text-xl"></i> <span>Finalizando recorrido...</span>';
-
-                if (simulationInterval) clearInterval(simulationInterval);
-                if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-
-                let endLat = null, endLng = null;
-                if (lastPosition) {
-                    endLat = lastPosition.latitude;
-                    endLng = lastPosition.longitude;
-                }
-
-                let finishUrl = "{{ route('trips.finish', '') }}";
-                if (tripId && tripId !== 'undefined' && tripId !== 'null' && tripId !== '') {
-                    finishUrl = finishUrl.replace(/\/$/, '') + '/' + encodeURIComponent(tripId);
-                } else {
-                    finishUrl = finishUrl.replace(/\/$/, '');
-                }
-
-                try {
-                    const resp = await fetch(finishUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': getCsrfToken(),
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            distance_km: totalDistanceKm,
-                            liters_consumed: totalLitersConsumed,
-                            lat: endLat,
-                            lng: endLng
-                        })
-                    });
-
-                    let data = {};
-                    try {
-                        data = await resp.json();
-                    } catch (jsonErr) {
-                        data = { success: false, message: 'Respuesta del servidor no fue JSON válido.' };
+                    if (!confirm(`¿Deseas finalizar el recorrido?\n• Distancia: ${totalDistanceKm.toFixed(2)} km\n• Litros consumidos: ${totalLitersConsumed.toFixed(3)} L`)) {
+                        return;
                     }
 
-                    if (resp.ok && data.success) {
-                        if (timerInterval) clearInterval(timerInterval);
-                        localStorage.removeItem('mypopo_active_trip');
-                        window.location.href = "{{ route('dashboard') }}";
+                    btnFinish.disabled = true;
+                    btnFinish.innerHTML = '<i class="bi bi-arrow-repeat animate-spin text-xl"></i> <span>Finalizando recorrido...</span>';
+
+                    if (simulationInterval) clearInterval(simulationInterval);
+                    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+                    let endLat = null, endLng = null;
+                    if (lastPosition) {
+                        endLat = lastPosition.latitude;
+                        endLng = lastPosition.longitude;
+                    }
+
+                    let finishUrl = "{{ route('trips.finish', '') }}";
+                    if (tripId && tripId !== 'undefined' && tripId !== 'null' && tripId !== '') {
+                        finishUrl = finishUrl.replace(/\/$/, '') + '/' + encodeURIComponent(tripId);
                     } else {
+                        finishUrl = finishUrl.replace(/\/$/, '');
+                    }
+
+                    try {
+                        const resp = await fetch(finishUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': getCsrfToken(),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                distance_km: totalDistanceKm,
+                                liters_consumed: totalLitersConsumed,
+                                lat: endLat,
+                                lng: endLng
+                            })
+                        });
+
+                        let data = {};
+                        try {
+                            data = await resp.json();
+                        } catch (jsonErr) {
+                            data = { success: false, message: 'Respuesta del servidor no fue JSON válido.' };
+                        }
+
+                        if (resp.ok && data.success) {
+                            if (timerInterval) clearInterval(timerInterval);
+                            localStorage.removeItem('mypopo_active_trip');
+                            window.location.href = "{{ route('dashboard') }}";
+                        } else {
+                            btnFinish.disabled = false;
+                            btnFinish.innerHTML = '<i class="bi bi-stop-circle-fill text-xl"></i> <span>Finalizar Recorrido</span>';
+                            const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Error al finalizar');
+                            alert('Error: ' + errMsg);
+                        }
+                    } catch (err) {
                         btnFinish.disabled = false;
                         btnFinish.innerHTML = '<i class="bi bi-stop-circle-fill text-xl"></i> <span>Finalizar Recorrido</span>';
-                        const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Error al finalizar');
-                        alert('Error: ' + errMsg);
+                        alert('Error al finalizar el recorrido: ' + err.message);
                     }
-                } catch (err) {
-                    btnFinish.disabled = false;
-                    btnFinish.innerHTML = '<i class="bi bi-stop-circle-fill text-xl"></i> <span>Finalizar Recorrido</span>';
-                    alert('Error al finalizar el recorrido: ' + err.message);
-                }
-            });
+                });
+            }
         });
     </script>
 
