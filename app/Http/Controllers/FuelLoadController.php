@@ -17,7 +17,8 @@ class FuelLoadController extends Controller
 
         return response()->json([
             'gas_actual' => $vehicle->current_liters,
-            'km_restantes' => $vehicle->autonomy_km
+            'km_restantes' => $vehicle->autonomy_km,
+            'dias_restantes' => round($vehicle->autonomy_km/32.9, 1)
         ]);
     }
 
