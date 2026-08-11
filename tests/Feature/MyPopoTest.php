@@ -83,6 +83,49 @@ class MyPopoTest extends TestCase
         $this->assertEquals(10.00, $vehicle->avg_consumption);
     }
 
+    public function test_start_and_finish_live_trip_updates_tank(): void
+    {
+        $startResponse = $this->postJson('/recorrido/iniciar', ['lat' => 19.43, 'lng' => -99.13]);
+        $startResponse->assertStatus(200);
+        $startResponse->assertJson(['success' => true]);
+        $tripId = $startResponse->json('trip.id');
+
+        $finishResponse = $this->postJson("/recorrido/finalizar/{$tripId}", [
+            'distance_km' => 25.0,
+            'liters_consumed' => 2.0,
+        ]);
+
+        $finishResponse->assertStatus(200);
+        $finishResponse->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('trips', [
+            'id' => $tripId,
+            'status' => 'completed',
+            'distance_km' => 25.0,
+            'liters_consumed' => 2.0,
+        ]);
+    }
+
+    public function test_finish_live_trip_without_id_in_url_finds_active_trip(): void
+    {
+        $startResponse = $this->postJson('/recorrido/iniciar', ['lat' => 19.43, 'lng' => -99.13]);
+        $tripId = $startResponse->json('trip.id');
+
+        $finishResponse = $this->postJson('/recorrido/finalizar', [
+            'distance_km' => 10.0,
+            'liters_consumed' => 1.0,
+        ]);
+
+        $finishResponse->assertStatus(200);
+        $finishResponse->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('trips', [
+            'id' => $tripId,
+            'status' => 'completed',
+            'distance_km' => 10.0,
+        ]);
+    }
+
     public function test_history_and_stats_views_render_successfully(): void
     {
         $this->get('/historial')->assertStatus(200);

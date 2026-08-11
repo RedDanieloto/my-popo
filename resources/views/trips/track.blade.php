@@ -144,14 +144,11 @@
                     <button id="btn-start-trip" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-zinc-950 font-black text-base rounded-2xl shadow-xl shadow-cyan-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? 'hidden' : '' }}">
                         <i class="bi bi-play-circle-fill text-xl"></i>
                         <span>Iniciar Recorrido con GPS</span>
-                    </button>
-
-                    <!-- Finalizar Recorrido Button -->
-                    <button id="btn-finish-trip" class="w-full py-4 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-black text-base rounded-2xl shadow-xl shadow-rose-500/30 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? '' : 'hidden' }}">
+                                        <!-- Finalizar Recorrido Button -->
+                    <button id="btn-finish-trip" type="button" class="w-full py-4 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-black text-base rounded-2xl shadow-xl shadow-rose-500/30 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? '' : 'hidden' }}">
                         <i class="bi bi-stop-circle-fill text-xl"></i>
                         <span>Finalizar Recorrido</span>
                     </button>
-
 
                 </div>
 
@@ -471,6 +468,17 @@
                         startTime = new Date();
                         lastTimestamp = Date.now();
                         lastPosition = startLat && startLng ? { latitude: startLat, longitude: startLng } : null;
+
+                        localStorage.setItem('mypopo_active_trip', JSON.stringify({
+                            tripId: data.trip.id,
+                            distance: 0,
+                            litersConsumed: 0,
+                            maxSpeed: 0,
+                            startTime: startTime.toISOString(),
+                            lastPosition: lastPosition,
+                            lastTimestamp: lastTimestamp
+                        }));
+
                         resumeTracking();
                     }
                 } catch (err) {
@@ -540,35 +548,12 @@
             btnFinish.addEventListener('click', async () => {
                 let tripId = activeTripIdInput.value;
 
-                // Ensure a valid trip ID exists
-                if (!tripId || tripId === '' || tripId === 'undefined') {
-                    try {
-                        const startUrl = "{{ route('trips.start') }}";
-                        const startResp = await fetch(startUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': getCsrfToken(),
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({})
-                        });
-                        const startData = await startResp.json();
-                        if (startData.success && startData.trip) {
-                            tripId = startData.trip.id;
-                            activeTripIdInput.value = tripId;
-                        }
-                    } catch (e) {}
-                }
-
-                if (!tripId) {
-                    alert('No hay un recorrido activo para finalizar.');
-                    return;
-                }
-
                 if (!confirm(`¿Deseas finalizar el recorrido?\n• Distancia: ${totalDistanceKm.toFixed(2)} km\n• Litros consumidos: ${totalLitersConsumed.toFixed(3)} L`)) {
                     return;
                 }
+
+                btnFinish.disabled = true;
+                btnFinish.innerHTML = '<i class="bi bi-arrow-repeat animate-spin text-xl"></i> <span>Finalizando recorrido...</span>';
 
                 if (simulationInterval) clearInterval(simulationInterval);
                 if (watchId !== null) navigator.geolocation.clearWatch(watchId);
@@ -579,9 +564,12 @@
                     endLng = lastPosition.longitude;
                 }
 
-                // Construct absolute URL safely using Laravel route helper
-                const finishRouteTemplate = "{{ route('trips.finish', ':id') }}";
-                const finishUrl = finishRouteTemplate.replace(':id', encodeURIComponent(tripId));
+                let finishUrl = "{{ route('trips.finish', '') }}";
+                if (tripId && tripId !== 'undefined' && tripId !== 'null' && tripId !== '') {
+                    finishUrl = finishUrl.replace(/\/$/, '') + '/' + encodeURIComponent(tripId);
+                } else {
+                    finishUrl = finishUrl.replace(/\/$/, '');
+                }
 
                 try {
                     const resp = await fetch(finishUrl, {
@@ -598,17 +586,27 @@
                             lng: endLng
                         })
                     });
-                    const data = await resp.json();
+
+                    let data = {};
+                    try {
+                        data = await resp.json();
+                    } catch (jsonErr) {
+                        data = { success: false, message: 'Respuesta del servidor no fue JSON válido.' };
+                    }
 
                     if (resp.ok && data.success) {
                         if (timerInterval) clearInterval(timerInterval);
                         localStorage.removeItem('mypopo_active_trip');
                         window.location.href = "{{ route('dashboard') }}";
                     } else {
+                        btnFinish.disabled = false;
+                        btnFinish.innerHTML = '<i class="bi bi-stop-circle-fill text-xl"></i> <span>Finalizar Recorrido</span>';
                         const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Error al finalizar');
                         alert('Error: ' + errMsg);
                     }
                 } catch (err) {
+                    btnFinish.disabled = false;
+                    btnFinish.innerHTML = '<i class="bi bi-stop-circle-fill text-xl"></i> <span>Finalizar Recorrido</span>';
                     alert('Error al finalizar el recorrido: ' + err.message);
                 }
             });

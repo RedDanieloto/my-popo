@@ -67,8 +67,27 @@ class TripController extends Controller
         return redirect()->route('trips.track')->with('success', 'Recorrido iniciado.');
     }
 
-    public function finish(Request $request, Trip $trip, TripService $tripService): JsonResponse|RedirectResponse
+    public function finish(Request $request, ?Trip $trip = null, TripService $tripService): JsonResponse|RedirectResponse
     {
+        if (! $trip || ! $trip->exists) {
+            $vehicle = Vehicle::firstOrCreate(['id' => 1]);
+            $trip = Trip::where('vehicle_id', $vehicle->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first();
+        }
+
+        if (! $trip) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay un recorrido activo para finalizar en el sistema.',
+                ], 404);
+            }
+
+            return redirect()->route('dashboard')->with('error', 'No hay un recorrido activo para finalizar.');
+        }
+
         $validated = $request->validate([
             'distance_km' => 'required|numeric|min:0',
             'liters_consumed' => 'nullable|numeric|min:0',
