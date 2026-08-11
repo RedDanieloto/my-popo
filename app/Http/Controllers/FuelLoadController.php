@@ -11,12 +11,13 @@ use Illuminate\View\View;
 class FuelLoadController extends Controller
 {   
     //ejemplo para n8n
-    public function gasActual()
+    public function infoCarro()
     {
         $vehicle = Vehicle::where('id', 1)->first();
 
         return response()->json([
-            'gas_actual' => $vehicle->current_liters
+            'gas_actual' => $vehicle->current_liters,
+            'km_restantes' => $vehicle->autonomy_km
         ]);
     }
 
@@ -27,7 +28,13 @@ class FuelLoadController extends Controller
 
 
 
-    
+
+
+
+
+
+
+
     public function create(): View
     {
         $vehicle = Vehicle::firstOrCreate(
