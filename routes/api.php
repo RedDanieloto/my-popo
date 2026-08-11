@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\TripApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\FuelLoadController;
+// Ejemplo n8n
+Route::get('/info', [TripApiController::class, 'infoCarro']);
 
-Route::get('/info', [FuelLoadController::class, 'infoCarro']);
+// Rutas directas para Atajos
+Route::match(['get', 'post'], '/recorrido/iniciar', [TripApiController::class, 'iniciar']);
+Route::match(['get', 'post'], '/recorrido/finalizar', [TripApiController::class, 'finalizar']);
+Route::match(['get', 'post'], '/recorrido/toggle', [TripApiController::class, 'toggle']);
+Route::get('/recorrido/estado', [TripApiController::class, 'estado']);

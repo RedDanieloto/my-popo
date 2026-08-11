@@ -9,35 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class FuelLoadController extends Controller
-{   
-    //ejemplo para n8n
-    public function infoCarro()
-    {
-        $vehicle = Vehicle::where('id', 1)->first();
-
-        return response()->json([
-            'gas_actual' => $vehicle->current_liters,
-            'km_restantes' => $vehicle->autonomy_km,
-            'dias_restantes' => round($vehicle->autonomy_km/32.9, 1),
-            'porcentaje_tanque' => round(($vehicle->current_liters/$vehicle->tank_capacity)*100, 1),
-            'status' => $vehicle->autonomy_km <= 80 ? '🔴 Tanque bajo, es momento de recargar' : '🟢 Tanque lleno, todo tranquilo',
-        ]);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+{ 
     public function create(): View
     {
         $vehicle = Vehicle::firstOrCreate(
