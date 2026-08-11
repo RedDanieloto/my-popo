@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class FuelLoadController extends Controller
-{
+{   
+    //ejemplo para n8n
     public function gasActual()
     {
         $vehicle = Vehicle::where('id', 1)->first();
@@ -19,6 +20,14 @@ class FuelLoadController extends Controller
         ]);
     }
 
+
+
+
+
+
+
+
+    
     public function create(): View
     {
         $vehicle = Vehicle::firstOrCreate(

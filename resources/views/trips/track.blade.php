@@ -1,19 +1,19 @@
 <x-layout :vehicle="$vehicle" title="Velocímetro & Recorrido - My Popo">
 
-    <div class="glass-card p-5 rounded-3xl space-y-5 text-center relative overflow-hidden">
+    <div class="glass-card p-5 md:p-8 rounded-3xl space-y-5 relative overflow-hidden">
         <!-- Ambient Glow -->
         <div id="ambient-glow" class="absolute -top-28 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full blur-3xl opacity-25 bg-cyan-500 transition-all duration-700"></div>
 
         <!-- Top Header Status -->
         <div class="flex items-center justify-between border-b border-zinc-800/80 pb-3">
             <div class="text-left">
-                <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <h2 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                    <i class="bi bi-speedometer2 text-cyan-400"></i>
                     Velocímetro & Recorrido
-                    <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-extrabold px-2 py-0.5 rounded-full border border-cyan-500/30">PRECISIÓN 100%</span>
                 </h2>
                 <p class="text-xs text-zinc-400">Telemetría e integración de consumo en tiempo real</p>
             </div>
-            <div id="gps-status-badge" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-zinc-800 text-zinc-400 flex items-center gap-1.5 border border-zinc-700">
+            <div id="gps-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-800 text-zinc-400 flex items-center gap-1.5 border border-zinc-700">
                 <span id="gps-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
                 <span id="gps-text">GPS Inactivo</span>
             </div>
@@ -22,131 +22,143 @@
         <!-- HTTP / Location Security Diagnostic Warning -->
         <div id="https-warning" class="hidden glass-card bg-amber-950/60 border-amber-500/50 p-3.5 rounded-2xl text-left text-xs text-amber-200 space-y-1">
             <div class="font-bold flex items-center gap-1.5">
-                <span>⚠️ Aviso de Geolocalización en iPhone/Android</span>
+                <i class="bi bi-exclamation-triangle-fill text-amber-400 text-sm"></i>
+                <span>Aviso de Geolocalización en iPhone/Android</span>
             </div>
             <p class="text-[11px] text-amber-300/90 leading-relaxed">
                 El navegador solicitará permiso de ubicación únicamente al presionar <strong>"Iniciar Recorrido"</strong>. Si usas Safari en iPhone por IP directa, asegúrate de otorgar permisos o prueba el modo simulación abajo.
             </p>
         </div>
 
-        <!-- Tesla / Apple Style Digital Speedometer Gauge -->
-        <div class="relative py-2 flex flex-col items-center justify-center">
-            <!-- SVG Speedometer Dial Arc -->
-            <div class="relative w-56 h-56 flex items-center justify-center">
-                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-                    <!-- Background Track Arc -->
-                    <circle cx="100" cy="100" r="82" stroke="currentColor" stroke-width="12" class="text-zinc-900" fill="none"
-                            stroke-dasharray="386" stroke-dashoffset="96" stroke-linecap="round" />
-                    <!-- Dynamic Speed Progress Arc -->
-                    <circle id="speed-arc" cx="100" cy="100" r="82" stroke="url(#speedGradient)" stroke-width="12" fill="none"
-                            stroke-dasharray="386" stroke-dashoffset="386" stroke-linecap="round" class="transition-all duration-500 ease-out" />
-                    <defs>
-                        <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#06b6d4" />
-                            <stop offset="50%" stop-color="#10b981" />
-                            <stop offset="85%" stop-color="#f59e0b" />
-                            <stop offset="100%" stop-color="#ef4444" />
-                        </linearGradient>
-                    </defs>
-                </svg>
+        <!-- PC Desktop Layout (Speedometer left, Metrics & Controls right) -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            
+            <!-- Left Column: Speedometer Dial Gauge -->
+            <div class="md:col-span-6 flex flex-col items-center justify-center py-2">
+                <div class="relative w-56 h-56 md:w-64 md:h-64 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+                        <!-- Background Track Arc -->
+                        <circle cx="100" cy="100" r="82" stroke="currentColor" stroke-width="12" class="text-zinc-900" fill="none"
+                                stroke-dasharray="386" stroke-dashoffset="96" stroke-linecap="round" />
+                        <!-- Dynamic Speed Progress Arc -->
+                        <circle id="speed-arc" cx="100" cy="100" r="82" stroke="url(#speedGradient)" stroke-width="12" fill="none"
+                                stroke-dasharray="386" stroke-dashoffset="386" stroke-linecap="round" class="transition-all duration-500 ease-out" />
+                        <defs>
+                            <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#06b6d4" />
+                                <stop offset="50%" stop-color="#10b981" />
+                                <stop offset="85%" stop-color="#f59e0b" />
+                                <stop offset="100%" stop-color="#ef4444" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
 
-                <!-- Center Digital Speed Readout -->
-                <div class="absolute inset-0 flex flex-col items-center justify-center space-y-0.5">
-                    <div class="text-xs font-semibold text-zinc-400 uppercase tracking-widest">Velocidad</div>
-                    <div class="text-6xl font-black text-white tracking-tighter flex items-baseline justify-center gap-1">
-                        <span id="display-speed" class="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent font-mono">0</span>
-                        <span class="text-sm font-bold text-cyan-400">km/h</span>
+                    <!-- Center Digital Speed Readout -->
+                    <div class="absolute inset-0 flex flex-col items-center justify-center space-y-0.5">
+                        <div class="text-xs font-semibold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
+                            <i class="bi bi-speedometer"></i> Velocidad
+                        </div>
+                        <div class="text-6xl md:text-7xl font-black text-white tracking-tighter flex items-baseline justify-center gap-1">
+                            <span id="display-speed" class="bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent font-mono">0</span>
+                            <span class="text-sm font-bold text-cyan-400">km/h</span>
+                        </div>
+
+                        <!-- Max Speed Badge -->
+                        <div class="text-[11px] font-bold text-zinc-400 bg-zinc-900/90 border border-zinc-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <span>Máx:</span>
+                            <span id="display-max-speed" class="text-white font-mono">0</span>
+                            <span>km/h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instantaneous Efficiency & Engine Status Pill -->
+                <div id="efficiency-pill" class="mt-3 glass-pill px-4 py-1.5 rounded-full border border-zinc-800 text-xs font-bold text-zinc-300 flex items-center gap-2 transition-all">
+                    <span id="efficiency-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
+                    <span id="efficiency-text">Detenido / Esperando movimiento</span>
+                </div>
+            </div>
+
+            <!-- Right Column: Real-Time Metrics & Control Buttons -->
+            <div class="md:col-span-6 space-y-4">
+                
+                <!-- Real-Time Precision Metrics Grid (4 Readouts) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- 1. Distancia Recorrida -->
+                    <div class="glass-pill p-3.5 md:p-4 rounded-2xl text-left border border-zinc-800/60">
+                        <div class="text-[11px] md:text-xs text-zinc-400 font-medium flex items-center gap-1.5">
+                            <i class="bi bi-geo-alt-fill text-cyan-400"></i>
+                            <span>Distancia Recorrida</span>
+                        </div>
+                        <div class="text-xl md:text-2xl font-bold text-white mt-1 font-mono flex items-baseline gap-1">
+                            <span id="display-km">0.00</span>
+                            <span class="text-xs text-zinc-400 font-normal">km</span>
+                        </div>
                     </div>
 
-                    <!-- Max Speed Badge -->
-                    <div class="text-[11px] font-bold text-zinc-400 bg-zinc-900/90 border border-zinc-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                        <span>Máx:</span>
-                        <span id="display-max-speed" class="text-white font-mono">0</span>
-                        <span>km/h</span>
+                    <!-- 2. Litros Consumidos en Tiempo Real -->
+                    <div class="glass-pill p-3.5 md:p-4 rounded-2xl text-left border border-zinc-800/60">
+                        <div class="text-[11px] md:text-xs text-zinc-400 font-medium flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <i class="bi bi-fuel-pump-fill text-emerald-400"></i>
+                                <span>Consumo Real</span>
+                            </span>
+                            <span class="text-[9px] text-emerald-400 font-bold uppercase">Integrado</span>
+                        </div>
+                        <div class="text-xl md:text-2xl font-bold text-emerald-400 mt-1 font-mono flex items-baseline gap-1">
+                            <span id="display-liters">0.000</span>
+                            <span class="text-xs text-zinc-400 font-normal">L</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Tiempo Transcurrido -->
+                    <div class="glass-pill p-3.5 md:p-4 rounded-2xl text-left border border-zinc-800/60">
+                        <div class="text-[11px] md:text-xs text-zinc-400 font-medium flex items-center gap-1.5">
+                            <i class="bi bi-stopwatch-fill text-amber-400"></i>
+                            <span>Tiempo Transcurrido</span>
+                        </div>
+                        <div id="display-timer" class="text-xl md:text-2xl font-bold text-white mt-1 font-mono">
+                            00:00:00
+                        </div>
+                    </div>
+
+                    <!-- 4. Consumo Promedio del Viaje -->
+                    <div class="glass-pill p-3.5 md:p-4 rounded-2xl text-left border border-zinc-800/60">
+                        <div class="text-[11px] md:text-xs text-zinc-400 font-medium flex items-center gap-1.5">
+                            <i class="bi bi-graph-up-arrow text-cyan-300"></i>
+                            <span>Rendimiento Viaje</span>
+                        </div>
+                        <div class="text-xl md:text-2xl font-bold text-cyan-300 mt-1 font-mono flex items-baseline gap-1">
+                            <span id="display-trip-avg">--.-</span>
+                            <span class="text-xs text-zinc-400 font-normal">km/L</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Instantaneous Efficiency & Engine Status Pill -->
-            <div id="efficiency-pill" class="mt-1 glass-pill px-4 py-1.5 rounded-full border border-zinc-800 text-xs font-bold text-zinc-300 flex items-center gap-2 transition-all">
-                <span id="efficiency-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
-                <span id="efficiency-text">Detenido / Esperando movimiento</span>
+                <!-- Controls: Start, Stop & Simulation Mode Buttons -->
+                <div class="space-y-3 pt-2">
+                    <input type="hidden" id="active-trip-id" value="{{ $activeTrip ? $activeTrip->id : '' }}">
+                    <input type="hidden" id="vehicle-avg-consumption" value="{{ $vehicle->avg_consumption }}">
+
+                    <!-- Iniciar Recorrido Button -->
+                    <button id="btn-start-trip" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-zinc-950 font-black text-base rounded-2xl shadow-xl shadow-cyan-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? 'hidden' : '' }}">
+                        <i class="bi bi-play-circle-fill text-xl"></i>
+                        <span>Iniciar Recorrido con GPS</span>
+                    </button>
+
+                    <!-- Finalizar Recorrido Button -->
+                    <button id="btn-finish-trip" class="w-full py-4 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-black text-base rounded-2xl shadow-xl shadow-rose-500/30 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? '' : 'hidden' }}">
+                        <i class="bi bi-stop-circle-fill text-xl"></i>
+                        <span>Finalizar Recorrido</span>
+                    </button>
+
+
+                </div>
+
             </div>
         </div>
 
-        <!-- Real-Time Precision Metrics Grid (4 Readouts) -->
-        <div class="grid grid-cols-2 gap-3 pt-1">
-            <!-- 1. Distancia Recorrida -->
-            <div class="glass-pill p-3.5 rounded-2xl text-left border border-zinc-800/60">
-                <div class="text-[11px] text-zinc-400 font-medium">Distancia Recorrida</div>
-                <div class="text-xl font-bold text-white mt-0.5 font-mono flex items-baseline gap-1">
-                    <span id="display-km">0.00</span>
-                    <span class="text-xs text-zinc-400 font-normal">km</span>
-                </div>
-            </div>
-
-            <!-- 2. Litros Consumidos en Tiempo Real -->
-            <div class="glass-pill p-3.5 rounded-2xl text-left border border-zinc-800/60">
-                <div class="text-[11px] text-zinc-400 font-medium flex items-center justify-between">
-                    <span>Consumo Real</span>
-                    <span class="text-[9px] text-emerald-400 font-bold uppercase">Integrado</span>
-                </div>
-                <div class="text-xl font-bold text-emerald-400 mt-0.5 font-mono flex items-baseline gap-1">
-                    <span id="display-liters">0.000</span>
-                    <span class="text-xs text-zinc-400 font-normal">L</span>
-                </div>
-            </div>
-
-            <!-- 3. Tiempo Transcurrido -->
-            <div class="glass-pill p-3.5 rounded-2xl text-left border border-zinc-800/60">
-                <div class="text-[11px] text-zinc-400 font-medium">Tiempo Transcurrido</div>
-                <div id="display-timer" class="text-xl font-bold text-white mt-0.5 font-mono">
-                    00:00:00
-                </div>
-            </div>
-
-            <!-- 4. Consumo Promedio del Viaje -->
-            <div class="glass-pill p-3.5 rounded-2xl text-left border border-zinc-800/60">
-                <div class="text-[11px] text-zinc-400 font-medium">Rendimiento Viaje</div>
-                <div class="text-xl font-bold text-cyan-300 mt-0.5 font-mono flex items-baseline gap-1">
-                    <span id="display-trip-avg">--.-</span>
-                    <span class="text-xs text-zinc-400 font-normal">km/L</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Controls: Start, Stop & Simulation Mode Buttons -->
-        <div class="pt-2 space-y-3">
-            <input type="hidden" id="active-trip-id" value="{{ $activeTrip ? $activeTrip->id : '' }}">
-            <input type="hidden" id="vehicle-avg-consumption" value="{{ $vehicle->avg_consumption }}">
-
-            <!-- Iniciar Recorrido Button -->
-            <button id="btn-start-trip" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-zinc-950 font-black text-base rounded-2xl shadow-xl shadow-cyan-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? 'hidden' : '' }}">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Iniciar Recorrido con GPS</span>
-            </button>
-
-            <!-- Finalizar Recorrido Button -->
-            <button id="btn-finish-trip" class="w-full py-4 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-black text-base rounded-2xl shadow-xl shadow-rose-500/30 transition active:scale-[0.98] flex items-center justify-center gap-2.5 {{ $activeTrip ? '' : 'hidden' }}">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                </svg>
-                <span>Finalizar Recorrido</span>
-            </button>
-
-            <!-- Simulador de Manejo (Test Mode) -->
-            <div class="pt-1">
-                <button id="btn-simulate-trip" type="button" class="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-cyan-400 font-bold text-xs rounded-xl border border-cyan-500/30 transition flex items-center justify-center gap-2">
-                    <span>⚡ Simular Manejo de Prueba (Sin Mover Vehículo)</span>
-                </button>
-            </div>
-        </div>
-
-        <p class="text-[11px] text-zinc-500 pt-1">
+        <p class="text-[11px] text-zinc-500 text-center pt-1">
             Permisos requeridos por el navegador al tocar "Iniciar Recorrido".
         </p>
     </div>
@@ -247,7 +259,7 @@
                     const idlingLitersPerSec = 0.85 / 3600;
                     return {
                         litersDelta: idlingLitersPerSec * dtSeconds,
-                        instantEfficiencyText: '🛑 Ralentí: 0.85 L/h (Semáforo)',
+                        instantEfficiencyText: '<i class="bi bi-dash-circle-fill me-1 text-amber-400"></i> Ralentí: 0.85 L/h (Semáforo)',
                         stateColor: 'amber'
                     };
                 }
@@ -258,19 +270,19 @@
 
                 if (speedKmh <= 45) {
                     instantKmPerLiter = 10.5;
-                    stateLabel = '🚦 Tráfico Urbano (10.5 km/L)';
+                    stateLabel = '<i class="bi bi-stoplights me-1 text-cyan-400"></i> Tráfico Urbano (10.5 km/L)';
                     color = 'cyan';
                 } else if (speedKmh <= 85) {
                     instantKmPerLiter = 13.5;
-                    stateLabel = '⚡ Urbano Fluido (13.5 km/L)';
+                    stateLabel = '<i class="bi bi-lightning-fill me-1 text-emerald-400"></i> Urbano Fluido (13.5 km/L)';
                     color = 'emerald';
                 } else if (speedKmh <= 115) {
                     instantKmPerLiter = 15.5;
-                    stateLabel = '🏎️ Carretera Óptimo (15.5 km/L)';
+                    stateLabel = '<i class="bi bi-speedometer2 me-1 text-emerald-400"></i> Carretera Óptimo (15.5 km/L)';
                     color = 'emerald';
                 } else {
                     instantKmPerLiter = 12.0;
-                    stateLabel = '🔥 Alta Velocidad (12.0 km/L)';
+                    stateLabel = '<i class="bi bi-fire me-1 text-rose-400"></i> Alta Velocidad (12.0 km/L)';
                     color = 'rose';
                 }
 
@@ -395,7 +407,7 @@
                         const fuelEval = calculateInstantaneousFuelDelta(currentSpeedKmh, dKm, dtSeconds);
                         totalLitersConsumed += fuelEval.litersDelta;
 
-                        efficiencyText.textContent = fuelEval.instantEfficiencyText;
+                        efficiencyText.innerHTML = fuelEval.instantEfficiencyText;
                         if (fuelEval.stateColor === 'amber') {
                             efficiencyDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
                         } else if (fuelEval.stateColor === 'emerald') {
@@ -497,8 +509,8 @@
                 isSimulating = true;
                 btnStart.classList.add('hidden');
                 btnFinish.classList.remove('hidden');
-                btnSimulate.innerHTML = '<span>⚡ Simulación Activa (Manejando a ~65 km/h)...</span>';
-                btnSimulate.className = 'w-full py-2.5 bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-bold text-xs rounded-xl animate-pulse';
+                btnSimulate.innerHTML = '<i class="bi bi-lightning-fill"></i> <span>Simulación Activa (Manejando a ~65 km/h)...</span>';
+                btnSimulate.className = 'w-full py-2.5 bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-bold text-xs rounded-xl animate-pulse flex items-center justify-center gap-2';
 
                 if (!startTime) startTime = new Date();
                 startTimer();
@@ -517,7 +529,7 @@
                     const fuelEval = calculateInstantaneousFuelDelta(currentSpeedKmh, dKm, dtSeconds);
                     totalLitersConsumed += fuelEval.litersDelta;
 
-                    efficiencyText.textContent = fuelEval.instantEfficiencyText;
+                    efficiencyText.innerHTML = fuelEval.instantEfficiencyText;
                     efficiencyDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
 
                     updateUI();
