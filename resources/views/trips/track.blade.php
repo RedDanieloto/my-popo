@@ -254,7 +254,7 @@
             async function syncTelemetryToServer(force = false) {
                 if (!activeTripIdInput.value) return;
                 const nowMs = Date.now();
-                if (!force && (nowMs - lastTelemetrySyncTime < 8000)) return;
+                if (!force && (nowMs - lastTelemetrySyncTime < 2000)) return;
                 lastTelemetrySyncTime = nowMs;
 
                 try {
