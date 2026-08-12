@@ -30,6 +30,21 @@ class TripService
     }
 
     /**
+     * Sincroniza la telemetría acumulada en tiempo real durante un viaje activo.
+     */
+    public function updateLiveTelemetry(Trip $trip, float $distanceKm, float $litersConsumed, ?float $endLat = null, ?float $endLng = null): Trip
+    {
+        $trip->update([
+            'distance_km' => max((float) $trip->distance_km, round($distanceKm, 2)),
+            'liters_consumed' => max((float) $trip->liters_consumed, round($litersConsumed, 3)),
+            'end_lat' => $endLat ?? $trip->end_lat,
+            'end_lng' => $endLng ?? $trip->end_lng,
+        ]);
+
+        return $trip;
+    }
+
+    /**
      * Finaliza un recorrido en tiempo real, calcula litros consumidos (o usa el cálculo exacto del velocímetro) y actualiza el tanque.
      */
     public function finishLiveTrip(Trip $trip, float $distanceKm, ?float $endLat = null, ?float $endLng = null, ?float $exactLitersConsumed = null): Trip
@@ -37,18 +52,34 @@ class TripService
         $vehicle = $trip->vehicle;
         $avgConsumption = max(1.0, $vehicle->avg_consumption);
 
+        // Si la distancia enviada es 0 pero el viaje ya había guardado telemetría previa en la BD, usar la telemetría acumulada
+        if ($distanceKm <= 0.001 && (float) $trip->distance_km > 0) {
+            $distanceKm = (float) $trip->distance_km;
+        }
+
+        // Si los litros exactos no fueron enviados pero el viaje ya tenía litros consumidos guardados por telemetría
+        if ($exactLitersConsumed === null && (float) $trip->liters_consumed > 0) {
+            $exactLitersConsumed = (float) $trip->liters_consumed;
+        }
+
+        // Si sigue en 0 km pero el viaje tuvo una duración activa (> 0 min), estimar distancia por tiempo transcurrido (~30 km/h)
+        if ($distanceKm <= 0.001 && $trip->start_time) {
+            $durationMinutes = max(1, (int) $trip->start_time->diffInMinutes(now()));
+            $distanceKm = round($durationMinutes * (30 / 60), 2);
+        }
+
         // Si se proporciona el cálculo exacto del velocímetro/integración, usarlo; de lo contrario usar distancia/consumo_promedio
         $litersConsumed = ($exactLitersConsumed !== null && $exactLitersConsumed > 0)
-            ? round($exactLitersConsumed, 2)
-            : round($distanceKm / $avgConsumption, 2);
+            ? round($exactLitersConsumed, 3)
+            : round($distanceKm / $avgConsumption, 3);
 
         $trip->update([
             'end_time' => now(),
             'distance_km' => round($distanceKm, 2),
             'liters_consumed' => $litersConsumed,
             'status' => 'completed',
-            'end_lat' => $endLat,
-            'end_lng' => $endLng,
+            'end_lat' => $endLat ?? $trip->end_lat,
+            'end_lng' => $endLng ?? $trip->end_lng,
         ]);
 
         // Restar litros del tanque actual (nunca menor a 0)

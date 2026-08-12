@@ -45,6 +45,14 @@ class FuelLoadController extends Controller
             ]
         );
 
+        $input = $request->all();
+        foreach (['amount_paid', 'price_per_liter'] as $field) {
+            if (isset($input[$field]) && is_string($input[$field])) {
+                $input[$field] = str_replace(',', '.', $input[$field]);
+            }
+        }
+        $request->replace($input);
+
         $validated = $request->validate([
             'amount_paid' => 'required|numeric|min:0.01',
             'price_per_liter' => 'required|numeric|min:0.01',

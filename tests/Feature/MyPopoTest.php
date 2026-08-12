@@ -165,4 +165,49 @@ class MyPopoTest extends TestCase
         $this->get('/estadisticas')->assertStatus(200);
         $this->get('/vehiculo')->assertStatus(200);
     }
+
+    public function test_telemetry_sync_and_api_finish_preserves_distance_and_liters(): void
+    {
+        $startResponse = $this->postJson('/api/recorrido/iniciar');
+        $tripId = $startResponse->json('trip.id');
+
+        // Telemetría enviada periódicamente desde el navegador
+        $telemetryResponse = $this->postJson('/recorrido/telemetria', [
+            'distance_km' => 18.5,
+            'liters_consumed' => 1.48,
+        ]);
+        $telemetryResponse->assertStatus(200);
+
+        // Finalizar viaje remotamente vía API (Atajo sin parámetros)
+        $finishResponse = $this->postJson('/api/recorrido/finalizar');
+        $finishResponse->assertStatus(200);
+        $finishResponse->assertJson([
+            'success' => true,
+            'trip' => [
+                'id' => $tripId,
+                'distance_km' => 18.5,
+                'liters_consumed' => 1.48,
+            ],
+        ]);
+    }
+
+    public function test_comma_decimals_accepted_in_manual_trip_and_fuel_load(): void
+    {
+        $responseManual = $this->post('/recorrido/manual', [
+            'distance_km' => '15,75',
+            'title' => 'Prueba con coma',
+        ]);
+        $responseManual->assertRedirect('/');
+        $this->assertDatabaseHas('trips', [
+            'distance_km' => 15.75,
+        ]);
+
+        $responseFuel = $this->post('/gasolina', [
+            'amount_paid' => '490,00',
+            'price_per_liter' => '24,50',
+            'is_full_tank' => 0,
+            'date' => now()->format('Y-m-d H:i:s'),
+        ]);
+        $responseFuel->assertRedirect('/');
+    }
 }

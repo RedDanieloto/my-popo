@@ -32,6 +32,14 @@ class VehicleController extends Controller
     {
         $vehicle = Vehicle::firstOrFail();
 
+        $input = $request->all();
+        foreach (['tank_capacity', 'current_liters', 'avg_consumption'] as $field) {
+            if (isset($input[$field]) && is_string($input[$field])) {
+                $input[$field] = str_replace(',', '.', $input[$field]);
+            }
+        }
+        $request->replace($input);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'brand' => 'required|string|max:255',

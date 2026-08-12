@@ -53,7 +53,7 @@
 
                 <div class="space-y-1.5">
                     <label class="text-xs font-semibold text-zinc-300">Capacidad (Litros)</label>
-                    <input type="number" step="0.1" name="tank_capacity" value="{{ old('tank_capacity', $vehicle->tank_capacity) }}" min="1" required
+                    <input type="number" step="any" inputmode="decimal" name="tank_capacity" value="{{ old('tank_capacity', $vehicle->tank_capacity) }}" min="1" required
                            class="w-full bg-zinc-900 border border-zinc-800 focus:border-cyan-500 text-white text-sm rounded-xl px-3.5 py-2.5 outline-none transition">
                 </div>
             </div>
@@ -65,7 +65,7 @@
                     <span>Litros actuales en el tanque (Medición manual inicial)</span>
                 </label>
                 <div class="relative">
-                    <input type="number" step="0.1" name="current_liters" value="{{ old('current_liters', $vehicle->current_liters) }}" min="0" required
+                    <input type="number" step="any" inputmode="decimal" name="current_liters" value="{{ old('current_liters', $vehicle->current_liters) }}" min="0" required
                            class="w-full bg-zinc-900 border border-zinc-800 focus:border-cyan-500 text-white text-sm rounded-xl px-3.5 py-2.5 outline-none transition">
                     <span class="absolute right-3 top-2.5 text-xs text-zinc-500 font-medium">Litros</span>
                 </div>
@@ -79,7 +79,7 @@
                     <span>Consumo promedio (km/L)</span>
                 </label>
                 <div class="relative">
-                    <input type="number" step="0.1" name="avg_consumption" value="{{ old('avg_consumption', $vehicle->avg_consumption) }}" min="0.1" required
+                    <input type="number" step="any" inputmode="decimal" name="avg_consumption" value="{{ old('avg_consumption', $vehicle->avg_consumption) }}" min="0.1" required
                            class="w-full bg-zinc-900 border border-zinc-800 focus:border-cyan-500 text-white text-sm rounded-xl px-3.5 py-2.5 outline-none transition">
                     <span class="absolute right-3 top-2.5 text-xs text-zinc-500 font-medium">km/L</span>
                 </div>

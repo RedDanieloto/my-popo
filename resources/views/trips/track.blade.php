@@ -250,6 +250,33 @@
                 localStorage.removeItem('mypopo_active_trip');
             }
 
+            let lastTelemetrySyncTime = 0;
+            async function syncTelemetryToServer(force = false) {
+                if (!activeTripIdInput.value) return;
+                const nowMs = Date.now();
+                if (!force && (nowMs - lastTelemetrySyncTime < 8000)) return;
+                lastTelemetrySyncTime = nowMs;
+
+                try {
+                    await fetch('/recorrido/telemetria', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': getCsrfToken(),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            distance_km: totalDistanceKm,
+                            liters_consumed: totalLitersConsumed,
+                            lat: lastPosition ? lastPosition.latitude : null,
+                            lng: lastPosition ? lastPosition.longitude : null
+                        })
+                    });
+                } catch (e) {
+                    console.warn('Telemetry sync error:', e);
+                }
+            }
+
             // Poll API every 5s to sync remote start/finish from Siri/Shortcuts/n8n
             async function syncTripStatusFromApi() {
                 try {
@@ -262,6 +289,9 @@
 
                     if (!data.is_active && activeTripIdInput.value) {
                         // Remote trip was finished via API/Siri
+                        if (totalDistanceKm > 0) {
+                            await syncTelemetryToServer(true);
+                        }
                         if (timerInterval) clearInterval(timerInterval);
                         if (simulationInterval) clearInterval(simulationInterval);
                         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
@@ -380,6 +410,7 @@
                         lastPosition: lastPosition,
                         lastTimestamp: lastTimestamp
                     }));
+                    syncTelemetryToServer(false);
                 }
             }
 

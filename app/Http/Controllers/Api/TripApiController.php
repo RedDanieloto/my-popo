@@ -96,13 +96,18 @@ class TripApiController extends Controller
             ], 404);
         }
 
-        $endLat = $request->input('lat') !== null ? (float) $request->input('lat') : null;
-        $endLng = $request->input('lng') !== null ? (float) $request->input('lng') : null;
-        $exactLiters = $request->input('liters_consumed') !== null ? (float) $request->input('liters_consumed') : null;
+        $endLat = $request->input('lat') !== null ? (float) str_replace(',', '.', (string) $request->input('lat')) : null;
+        $endLng = $request->input('lng') !== null ? (float) str_replace(',', '.', (string) $request->input('lng')) : null;
+        $exactLiters = $request->input('liters_consumed') !== null ? (float) str_replace(',', '.', (string) $request->input('liters_consumed')) : null;
 
         // Distancia enviada explícitamente (distance_km, km o distancia)
         $distanceInput = $request->input('distance_km') ?? $request->input('km') ?? $request->input('distancia');
-        $distanceKm = $distanceInput !== null ? (float) $distanceInput : null;
+        $distanceKm = $distanceInput !== null ? (float) str_replace(',', '.', (string) $distanceInput) : null;
+
+        // Si no se proporcionó distancia pero se acumuló telemetría previa en la BD, usarla
+        if ($distanceKm === null && (float) $trip->distance_km > 0) {
+            $distanceKm = (float) $trip->distance_km;
+        }
 
         // Si no se proporcionó distancia pero se tienen coordenadas de inicio y fin, calcular por Haversine
         if ($distanceKm === null && $trip->start_lat && $trip->start_lng && $endLat && $endLng) {
@@ -114,7 +119,7 @@ class TripApiController extends Controller
             );
         }
 
-        // Si sigue sin distancia, asignar 0.0 por defecto para evitar errores
+        // Si sigue sin distancia, asignar 0.0 para que finishLiveTrip aplique estimación por tiempo si existe
         if ($distanceKm === null) {
             $distanceKm = 0.0;
         }
@@ -265,6 +270,43 @@ class TripApiController extends Controller
                 'current_liters' => $freshVehicle->current_liters,
                 'fuel_percentage' => $freshVehicle->fuel_percentage,
                 'autonomy_km' => $freshVehicle->autonomy_km,
+            ],
+        ]);
+    }
+
+    /**
+     * Recibe telemetría en tiempo real desde la app o dispositivos externos.
+     */
+    public function telemetria(Request $request, TripService $tripService): JsonResponse
+    {
+        $vehicle = $this->getVehicle();
+
+        $trip = Trip::where('vehicle_id', $vehicle->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (! $trip) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay ningún recorrido activo para actualizar telemetría.',
+            ], 404);
+        }
+
+        $distanceKm = (float) str_replace(',', '.', (string) ($request->input('distance_km') ?? $request->input('km') ?? 0));
+        $litersConsumed = (float) str_replace(',', '.', (string) ($request->input('liters_consumed') ?? $request->input('litros') ?? 0));
+        $lat = $request->input('lat') !== null ? (float) str_replace(',', '.', (string) $request->input('lat')) : null;
+        $lng = $request->input('lng') !== null ? (float) str_replace(',', '.', (string) $request->input('lng')) : null;
+
+        $trip = $tripService->updateLiveTelemetry($trip, $distanceKm, $litersConsumed, $lat, $lng);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Telemetría actualizada.',
+            'trip' => [
+                'id' => $trip->id,
+                'distance_km' => $trip->distance_km,
+                'liters_consumed' => $trip->liters_consumed,
             ],
         ]);
     }

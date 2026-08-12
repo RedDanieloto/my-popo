@@ -11,4 +11,5 @@ Route::match(['get', 'post'], '/recorrido/iniciar', [TripApiController::class, '
 Route::match(['get', 'post'], '/recorrido/finalizar', [TripApiController::class, 'finalizar']);
 Route::match(['get', 'post'], '/recorrido/toggle', [TripApiController::class, 'toggle']);
 Route::match(['get', 'post', 'delete'], '/recorrido/cancelar/{trip?}', [TripApiController::class, 'cancelar']);
+Route::match(['get', 'post'], '/recorrido/telemetria', [TripApiController::class, 'telemetria']);
 Route::get('/recorrido/estado', [TripApiController::class, 'estado']);

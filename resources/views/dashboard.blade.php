@@ -181,7 +181,7 @@
                 <form action="{{ route('trips.manual') }}" method="POST" class="flex gap-2">
                     @csrf
                     <div class="relative flex-1">
-                        <input type="number" step="0.1" min="0.1" name="distance_km" placeholder="Km recorridos (ej. 15)" required
+                        <input type="number" step="any" min="0.01" inputmode="decimal" name="distance_km" placeholder="Km recorridos (ej. 15.5)" required
                                class="w-full bg-zinc-900/90 border border-zinc-800 focus:border-cyan-500 text-white text-xs md:text-sm rounded-xl px-3 py-2.5 outline-none transition placeholder-zinc-500">
                         <span class="absolute right-3 top-2.5 text-xs text-zinc-500 font-medium">km</span>
                     </div>

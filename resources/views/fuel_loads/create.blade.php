@@ -26,7 +26,7 @@
                     </label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-2.5 text-xs text-zinc-500 font-bold">$</span>
-                        <input type="number" step="0.01" min="0.01" id="amount_paid" name="amount_paid" value="{{ old('amount_paid') }}" placeholder="500.00" required
+                        <input type="number" step="any" min="0.01" inputmode="decimal" id="amount_paid" name="amount_paid" value="{{ old('amount_paid') }}" placeholder="500.00" required
                                class="w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500 text-white text-sm rounded-xl pl-8 pr-3 py-2.5 outline-none transition">
                     </div>
                 </div>
@@ -38,7 +38,7 @@
                     </label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-2.5 text-xs text-zinc-500 font-bold">$</span>
-                        <input type="number" step="0.01" min="0.01" id="price_per_liter" name="price_per_liter" value="{{ old('price_per_liter', '24.50') }}" placeholder="24.50" required
+                        <input type="number" step="any" min="0.01" inputmode="decimal" id="price_per_liter" name="price_per_liter" value="{{ old('price_per_liter', '24.50') }}" placeholder="24.50" required
                                class="w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500 text-white text-sm rounded-xl pl-8 pr-3 py-2.5 outline-none transition">
                     </div>
                 </div>

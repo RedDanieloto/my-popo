@@ -88,6 +88,14 @@ class TripController extends Controller
             return redirect()->route('dashboard')->with('error', 'No hay un recorrido activo para finalizar.');
         }
 
+        $input = $request->all();
+        foreach (['distance_km', 'liters_consumed', 'lat', 'lng'] as $field) {
+            if (isset($input[$field]) && is_string($input[$field])) {
+                $input[$field] = str_replace(',', '.', $input[$field]);
+            }
+        }
+        $request->replace($input);
+
         $validated = $request->validate([
             'distance_km' => 'required|numeric|min:0',
             'liters_consumed' => 'nullable|numeric|min:0',
@@ -113,6 +121,28 @@ class TripController extends Controller
         return redirect()->route('dashboard')->with('success', 'Recorrido finalizado. Se han descontado los litros consumidos.');
     }
 
+    public function telemetry(Request $request, TripService $tripService): JsonResponse
+    {
+        $vehicle = Vehicle::firstOrCreate(['id' => 1]);
+        $trip = Trip::where('vehicle_id', $vehicle->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (! $trip) {
+            return response()->json(['success' => false, 'message' => 'No hay recorrido activo.'], 404);
+        }
+
+        $distanceKm = (float) str_replace(',', '.', (string) $request->input('distance_km', 0));
+        $litersConsumed = (float) str_replace(',', '.', (string) $request->input('liters_consumed', 0));
+        $lat = $request->input('lat') !== null ? (float) $request->input('lat') : null;
+        $lng = $request->input('lng') !== null ? (float) $request->input('lng') : null;
+
+        $tripService->updateLiveTelemetry($trip, $distanceKm, $litersConsumed, $lat, $lng);
+
+        return response()->json(['success' => true, 'trip' => $trip->fresh()]);
+    }
+
     public function storeManual(Request $request, TripService $tripService): RedirectResponse
     {
         $vehicle = Vehicle::firstOrCreate(
@@ -128,6 +158,12 @@ class TripController extends Controller
                 'initial_avg_consumption' => 12.50,
             ]
         );
+
+        $input = $request->all();
+        if (isset($input['distance_km']) && is_string($input['distance_km'])) {
+            $input['distance_km'] = str_replace(',', '.', $input['distance_km']);
+        }
+        $request->replace($input);
 
         $validated = $request->validate([
             'distance_km' => 'required|numeric|min:0.01',
